@@ -5,11 +5,14 @@ from itertools import product
 
 with open('passwords.txt', 'r') as file:
     raw_hashed_passwords = file.read().splitlines()
+
+    # A dictionary is used to identify which number each password is
     hashed_passwords = {}
     for key_value in raw_hashed_passwords:
         key, value = key_value.split()
         hashed_passwords[int(key)] = value
 
+    # A set is created out of the dictionary values for efficient hash lookup
     hashed_passwords_set = set(hashed_passwords.values())
 
 
@@ -25,10 +28,13 @@ def record_data(password, hashed_value, file, time_found):
         row = next((key for key, value in hashed_passwords.items() if value == hashed_value), None)
         file.write(f"#{row}: {password},{hashed_value} ({time_found})\n")
 
+# The hash cracking is divided up into multiple smaller functions so that they can be run in parallel on multiple cores
+# Note: many of these functions can be combined into one but it is better to separate them out to run in parallel
+
 #D
 def digit_combinations():
     start_time = time.time()
-    with open("digit_combinations_results.txt", "a") as file:
+    with open("rackedHashes/digit_combinations_results.txt", "a") as file:
         for digit_max in range(1, 11):
             for num in range(10 ** digit_max):
                 number_string = f"{num:0{digit_max}d}"
@@ -40,7 +46,7 @@ def digit_combinations():
 #W
 def word_combinations():
     start_time = time.time()
-    with open("word_combinations_results.txt", "a") as file:
+    with open("rackedHashes/word_combinations_results.txt", "a") as file:
         for word in words:
             hashed_value = compute_hash(word)
             if hashed_value in hashed_passwords_set:
@@ -50,7 +56,7 @@ def word_combinations():
 #WD
 def trailing_digit_combinations():
     start_time = time.time()
-    with open("trailing_digit_combinations_results.txt", "a") as file:
+    with open("rackedHashes/trailing_digit_combinations_results.txt", "a") as file:
         for digit_max in range(1, 11):
             for num in range(10 ** digit_max):
                 number_string = f"{num:0{digit_max}d}"
@@ -64,7 +70,7 @@ def trailing_digit_combinations():
 #DW
 def leading_digit_combinations():
     start_time = time.time()
-    with open("leading_digit_combinations_results.txt", "a") as file:
+    with open("rackedHashes/leading_digit_combinations_results.txt", "a") as file:
         for digit_max in range(1, 11):
             for num in range(10 ** digit_max):
                 number_string = f"{num:0{digit_max}d}"
@@ -80,7 +86,7 @@ def leading_digit_combinations():
 #WW
 def two_word_combinations():
     start_time = time.time()
-    with open("two_word_combinations_results.txt", "a") as file:
+    with open("rackedHashes/two_word_combinations_results.txt", "a") as file:
         for combination in product(words, repeat=2):
             combination_string = ''.join(combination)
             hashed_value = compute_hash(combination_string)
@@ -91,7 +97,7 @@ def two_word_combinations():
 #WWD
 def two_word_trailing_digit_combinations():
     start_time = time.time()
-    with open("two_word_trailing_digit_results.txt", "a") as file:
+    with open("rackedHashes/two_word_trailing_digit_results.txt", "a") as file:
         for digit_max in range(1, 11):
             for num in range(10 ** digit_max):
                 number_string = f"{num:0{digit_max}d}"
@@ -106,7 +112,7 @@ def two_word_trailing_digit_combinations():
 #DWW
 def two_word_leading_digit_combinations():
     start_time = time.time()
-    with open("two_word_leading_digit_results.txt", "a") as file:
+    with open("rackedHashes/two_word_leading_digit_results.txt", "a") as file:
         for digit_max in range(1, 11):
             for num in range(10 ** digit_max):
                 number_string = f"{num:0{digit_max}d}"
@@ -122,7 +128,7 @@ def two_word_leading_digit_combinations():
 #WWW
 def three_word_combinations():
     start_time = time.time()
-    with open("three_word_combinations_results.txt", "a") as file:
+    with open("rackedHashes/three_word_combinations_results.txt", "a") as file:
         for combination in product(words, repeat=3):
             combination_string = ''.join(combination)
             hashed_value = compute_hash(combination_string)
@@ -133,7 +139,7 @@ def three_word_combinations():
 #WWW chunked
 def process_combinations(words_chunk):
     start_time = time.time()
-    with open(f"results_{current_process().name}.txt", "a") as file:
+    with open(f"crackedHashes/results_{current_process().name}.txt", "a") as file:
         for word1 in words_chunk:
             for word2 in words:
                 for word3 in words:
@@ -143,6 +149,8 @@ def process_combinations(words_chunk):
                         response_time = time.time() - start_time
                         record_data(combination_string, hashed_value, file, response_time)
 
+# Function that chunks up the WWW function
+# Note: This is needed due to the long search time
 def chunked_combinations():
     # Split words into 4 roughly equal chunks
     chunk_size = len(words) // 4
@@ -162,7 +170,8 @@ def chunked_combinations():
     for process in processes:
         process.join()
 
-def processHashBreaking():
+# Function that contains all of the main processes
+def process_hash_breaking():
     functions = [
         digit_combinations,
         word_combinations,
@@ -185,82 +194,4 @@ def processHashBreaking():
 
 if __name__ == '__main__':
     chunked_combinations()
-    processHashBreaking()
-    # leading_digit_combinations()
-    # p1 = multiprocessing.Process(target=digit_combinations)
-    # p2 = multiprocessing.Process(target=word_combinations)
-    # p3 = multiprocessing.Process(target=trailing_digit_combinations)
-    # p4 = multiprocessing.Process(target=leading_digit_combinations)
-    # p5 = multiprocessing.Process(target=two_word_combinations)
-    # p6 = multiprocessing.Process(target=two_word_trailing_digit_combinations)
-    # p7 = multiprocessing.Process(target=two_word_leading_digit_combinations)
-    # p8 = multiprocessing.Process(target=three_word_combinations)
-
-    # p1.start()
-    # p2.start()
-    # p3.start()
-    # p4.start()
-    # p5.start()
-    # p6.start()
-    # p7.start()
-    # p8.start()
-
-    # p1.join()
-    # p2.join()
-    # p3.join()
-    # p4.join()
-    # p5.join()
-    # p6.join()
-    # p7.join()
-    # p8.join()
-
-
-# yes, WD and DW can be both combined by checking the reverse
-# W can also be checked by checking the initial with no digit
-
-#might be more efficient to reverse the loops - more likely to have less num
-#DW
-
-
-
-
-
-
-# print(hashed_passwords)
-# trailing_digit_combinations()
-# digit_max = 0
-# test = 123
-# number_string = f"{test:0{digit_max}d}"
-# print (number_string)
-# 10 digits for each
-# print(hashed_passwords_set)
-# number_string = "123456"
-# test = compute_hash(number_string)
-# print(number_string)
-# print(test)
-# if (test in hashed_passwords_set):
-#     print(number_string)
-#     print(test)
-# D
-# maybe just work can be inlcuded within number but have a 0 for no string?
-# W
-# DW
-# WD
-# WW
-# DWW
-# WWD
-# WWW
-
-# have an if in thing for every hash result
-
-# I can multithread each of my different functions I guess
-
-# I am thinking check each word for each digit to speed it all up
-# going to 10 is too expensive otherwise
-
-# maybe have each write to their own file and then compile them at the end
-# I can also consider breaking up the number searches into seperate functions to further break it down
-
-# dictionary for hashed passwords
-
-# dont have the one write to a file but rather have an outside thing to do it 
+    # process_hash_breaking()
